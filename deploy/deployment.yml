@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-streams
+spec:
+  selector:
+    matchLabels:
+      run: data-streams
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        run: data-streams
+    spec:
+      containers:
+      - name: data-streams
+        image: data-streams
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 100m
+            memory: 200Mi

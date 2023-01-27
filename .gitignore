@@ -1,0 +1,22 @@
+# Exclude Build Artifacts
+.serverless/
+.webpack/
+coverage/
+dist/
+node_modules/
+.env
+
+# Exclude Test Artifacts
+.nyc_output/
+test-reports/
+
+# Exclude Tooling Artifacts
+.husky/_/
+.idea/
+.project
+newrelic_agent.log
+lint
+
+# Platform Specific Artifacts
+.DS_Store
+nohup.out
