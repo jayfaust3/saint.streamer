@@ -1,8 +1,10 @@
 version: '3.8'
 
 services:
-  data-streams:
-    image: data-streams
+  saint-streamer:
+    image: saint-streamer
+    container_name: saint-streamer
+    hostname: saint-streamer
     build:
       context: .
       dockerfile: ./Dockerfile

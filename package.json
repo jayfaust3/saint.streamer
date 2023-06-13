@@ -1,5 +1,5 @@
 {
-  "name": "data-streams",
+  "name": "saint-streamer",
   "version": "0.1.0",
   "scripts": {
     "build": "tsc",

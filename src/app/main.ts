@@ -29,6 +29,8 @@ const createTopics = async () => {
 
 const processChange = async (change: ChangeStreamDocument) => {
     try {
+        console.log('processing change stream document', change)
+
         const producer: Producer = kafka.producer();
 
         await producer.connect();

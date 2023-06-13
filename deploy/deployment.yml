@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: data-streams
+  name: saint-streamer
 spec:
   selector:
     matchLabels:
-      run: data-streams
+      run: saint-streamer
   replicas: 2
   template:
     metadata:
       labels:
-        run: data-streams
+        run: saint-streamer
     spec:
       containers:
-      - name: data-streams
-        image: data-streams
+      - name: saint-streamer
+        image: saint-streamer
         ports:
         - containerPort: 80
         resources:
