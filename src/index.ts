@@ -41,57 +41,57 @@ const processChange = async (
     try {
         console.log('processing table stream', { eventName, recordToProcess });
 
-        if (eventName) {
+        if (eventName && recordToProcess) {
             const producer: Producer = kafka.producer();
 
-        await producer.connect();
+            await producer.connect();
 
-        let record: ProducerRecord;
+            let record: ProducerRecord;
 
-        switch(eventName) {
-            case 'INSERT':
-                record = {
-                    topic: KAFKA_CREATION_TOPIC_NAME!,
-                    messages: [
-                        { 
-                            value: JSON.stringify(recordToProcess)
-                        }
-                    ]
-                };
+            switch(eventName) {
+                case 'INSERT':
+                    record = {
+                        topic: KAFKA_CREATION_TOPIC_NAME!,
+                        messages: [
+                            { 
+                                value: JSON.stringify(recordToProcess)
+                            }
+                        ]
+                    };
 
-                break;
+                    break;
 
-            case 'MODIFY':
-                record = {
-                    topic: KAFKA_UPDATE_TOPIC_NAME!,
-                    messages: [
-                        { 
-                            value: JSON.stringify(recordToProcess)
-                        }
-                    ]
-                };
+                case 'MODIFY':
+                    record = {
+                        topic: KAFKA_UPDATE_TOPIC_NAME!,
+                        messages: [
+                            { 
+                                value: JSON.stringify(recordToProcess)
+                            }
+                        ]
+                    };
 
-                break;
+                    break;
 
-            case 'REMOVE':
-                record = {
-                    topic: KAFKA_DELETION_TOPIC_NAME!,
-                    messages: [
-                        {
-                            value: JSON.stringify(recordToProcess)
-                        }
-                    ]
-                };
+                case 'REMOVE':
+                    record = {
+                        topic: KAFKA_DELETION_TOPIC_NAME!,
+                        messages: [
+                            {
+                                value: JSON.stringify(recordToProcess)
+                            }
+                        ]
+                    };
+                    
+                    break;
                 
-                break;
-            
-            default:
-                break;
-        }
+                default:
+                    break;
+            }
 
-        await producer.send(record!);
+            await producer.send(record!);
 
-        await producer.disconnect();
+            await producer.disconnect();
         }
     } catch (error) {
         console.log('Unable to proccess change:', error);
