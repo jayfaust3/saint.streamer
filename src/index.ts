@@ -1,10 +1,12 @@
+import { AttributeValue, DynamoDBStreamEvent } from "aws-lambda";
 import { Kafka, Producer, ProducerRecord } from 'kafkajs';
 
 const {
     KAFKA_SERVER_URI,
     KAFKA_SERVER_PORT,
     KAFKA_CREATION_TOPIC_NAME,
-    KAFKA_UPDATE_TOPIC_NAME
+    KAFKA_UPDATE_TOPIC_NAME,
+    KAFKA_DELETION_TOPIC_NAME,
 } = process.env;
 
 const kafka = new Kafka({
@@ -24,16 +26,23 @@ const createTopics = async () => {
             },
             { 
                 topic: KAFKA_UPDATE_TOPIC_NAME!
-            }
+            },
+            {
+                topic: KAFKA_DELETION_TOPIC_NAME!
+            },
         ]
     });
 };
 
-const processChange = async (eventName: 'INSERT' | 'MODIFY' | 'REMOVE', recordToProcess: unknown) => {
+const processChange = async (
+    eventName: 'INSERT' | 'MODIFY' | 'REMOVE' | undefined,
+    recordToProcess: { [key: string]: AttributeValue } | undefined
+) => {
     try {
-        console.log('processing table stream', { eventName, recordToProcess })
+        console.log('processing table stream', { eventName, recordToProcess });
 
-        const producer: Producer = kafka.producer();
+        if (eventName) {
+            const producer: Producer = kafka.producer();
 
         await producer.connect();
 
@@ -63,6 +72,18 @@ const processChange = async (eventName: 'INSERT' | 'MODIFY' | 'REMOVE', recordTo
                 };
 
                 break;
+
+            case 'REMOVE':
+                record = {
+                    topic: KAFKA_DELETION_TOPIC_NAME!,
+                    messages: [
+                        {
+                            value: JSON.stringify(recordToProcess)
+                        }
+                    ]
+                };
+                
+                break;
             
             default:
                 break;
@@ -71,19 +92,24 @@ const processChange = async (eventName: 'INSERT' | 'MODIFY' | 'REMOVE', recordTo
         await producer.send(record!);
 
         await producer.disconnect();
+        }
     } catch (error) {
         console.log('Unable to proccess change:', error);
     }
 };
 
-export const handler = async (event) => {
+export const handler = async (event: DynamoDBStreamEvent) => {
     await createTopics();
 
     const { Records: records } = event
 
     records.forEach(async (entry) => {
-        const { eventName, dynamodb: { NewImage: recordToProcess } } = entry
-    
-        await processChange(eventName, recordToProcess);
+        const { eventName, dynamodb } = entry
+
+        if (dynamodb) {
+            const { NewImage: recordToProcess } = dynamodb;
+
+            await processChange(eventName, recordToProcess);
+        }
     });
 };
