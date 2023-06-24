@@ -8,28 +8,28 @@ const kafka = new Kafka({
     brokers: [`${KAFKA_SERVER_URI}:${KAFKA_SERVER_PORT}`],
 });
 
-const createTopics = async () => {
-    const admin = kafka.admin();
+// const createTopics = async () => {
+//     const admin = kafka.admin();
 
-    await admin.connect();
+//     await admin.connect();
 
-    await admin.createTopics({
-        waitForLeaders: true,
-        topics: [
-            { 
-                topic: KAFKA_CREATION_TOPIC_NAME!
-            },
-            { 
-                topic: KAFKA_UPDATE_TOPIC_NAME!
-            }
-        ]
-    });
-};
+//     await admin.createTopics({
+//         waitForLeaders: true,
+//         topics: [
+//             { 
+//                 topic: KAFKA_CREATION_TOPIC_NAME!
+//             },
+//             { 
+//                 topic: KAFKA_UPDATE_TOPIC_NAME!
+//             }
+//         ]
+//     });
+// };
 
 
 const processChange = async (change: ChangeStreamDocument) => {
     try {
-        console.log('processing change stream document', change)
+        console.log('Processing change stream document', change)
 
         const producer: Producer = kafka.producer();
 
@@ -92,6 +92,10 @@ const watch = async () => {
 
         await processChange(change);
     });
+
+    changeStream.on('error', () => {
+        console.log('Error received');
+    });
 }
 
 const app: Express = express();
@@ -101,7 +105,7 @@ const PORT: number = (APPLICATION_PORT as number | undefined) || 80;
 app.listen(PORT, async () => {
     console.log(`Node server running on port ${PORT}`);
 
-    await createTopics().catch((error) => console.error('ERROR:', error));
+    // await createTopics().catch((error) => console.error('Error creating topics:', error));
 
-    await watch().catch((error) => console.error('ERROR:', error));
+    await watch().catch((error) => console.error('Error watching collection:', error));
 });
