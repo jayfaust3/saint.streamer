@@ -7,7 +7,7 @@
     "lint": "eslint --ignore-path .gitignore --ext .ts .",
     "lint:fix": "npm run lint -- --fix",
     "prebuild": "npm run clean",
-    "start": "ts-node src/app/main.ts"
+    "start": "npm i -g typescript && npm i && npm run build && node dist/index.js"
   },
   "lint-staged": {
     "*.ts": "eslint --fix"
@@ -15,8 +15,7 @@
   "eslintConfig": {
     "parserOptions": {
       "project": [
-        "tsconfig.json",
-        "test/tsconfig.json"
+        "tsconfig.json"
       ]
     }
   },

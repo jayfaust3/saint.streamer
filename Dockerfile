@@ -1,13 +1,14 @@
-FROM node:16-alpine
+FROM node:18-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /usr/saint-streamer/src
 
-COPY package*.json ./
+COPY package.json .
 
-RUN npm install
+RUN npm install\
+    && npm install typescript -g
 
 COPY . .
 
-EXPOSE 80
+RUN tsc
 
-CMD [ "npm", "start" ]
+CMD ["node", "./dist/index.js"]
