@@ -1,41 +1,38 @@
 import express, { Express } from 'express';
 import { Kafka, Producer, ProducerRecord } from 'kafkajs';
-import { ChangeStream, ChangeStreamDocument, ChangeStreamInsertDocument, ChangeStreamReplaceDocument, Collection, Db, Document, MongoClient } from 'mongodb';
+import {
+    ChangeStream,
+    ChangeStreamDocument,
+    Collection,
+    Db,
+    Document,
+    MongoClient
+} from 'mongodb';
 
-const { APPLICATION_PORT, KAFKA_SERVER_URI, KAFKA_SERVER_PORT, KAFKA_CREATION_TOPIC_NAME, KAFKA_UPDATE_TOPIC_NAME, MONGO_URI, DB_NAME, COLLECTION_NAME } = process.env;
+const {
+    APPLICATION_PORT,
+    KAFKA_SERVER_URI,
+    KAFKA_SERVER_PORT,
+    KAFKA_CREATION_TOPIC_NAME,
+    KAFKA_UPDATE_TOPIC_NAME,
+    KAFKA_DELETION_TOPIC_NAME,
+    MONGO_URI,
+    DB_NAME,
+    COLLECTION_NAME
+} = process.env;
 
 const kafka = new Kafka({
     brokers: [`${KAFKA_SERVER_URI}:${KAFKA_SERVER_PORT}`],
 });
 
-// const createTopics = async () => {
-//     const admin = kafka.admin();
-
-//     await admin.connect();
-
-//     await admin.createTopics({
-//         waitForLeaders: true,
-//         topics: [
-//             { 
-//                 topic: KAFKA_CREATION_TOPIC_NAME!
-//             },
-//             { 
-//                 topic: KAFKA_UPDATE_TOPIC_NAME!
-//             }
-//         ]
-//     });
-// };
-
 
 const processChange = async (change: ChangeStreamDocument) => {
     try {
-        console.log('Processing change stream document', change)
-
         const producer: Producer = kafka.producer();
 
         await producer.connect();
 
-        let record: ProducerRecord;
+        let record: ProducerRecord | undefined;
 
         switch(change.operationType) {
             case 'insert':
@@ -43,7 +40,7 @@ const processChange = async (change: ChangeStreamDocument) => {
                     topic: KAFKA_CREATION_TOPIC_NAME!,
                     messages: [
                         { 
-                            value: JSON.stringify((change as unknown as ChangeStreamInsertDocument).fullDocument)
+                            value: JSON.stringify(change.fullDocument)
                         }
                     ]
                 };
@@ -55,22 +52,33 @@ const processChange = async (change: ChangeStreamDocument) => {
                     topic: KAFKA_UPDATE_TOPIC_NAME!,
                     messages: [
                         { 
-                            value: JSON.stringify((change as unknown as ChangeStreamReplaceDocument).fullDocument)
+                            value: JSON.stringify(change.fullDocument)
                         }
                     ]
                 };
 
                 break;
+
+            case 'delete':
+                record = {
+                    topic: KAFKA_DELETION_TOPIC_NAME!,
+                    messages: [
+                        { 
+                            value: JSON.stringify({ id: change.documentKey._id })
+                        }
+                    ]
+                };
             
             default:
-                throw new Error(`'${change.operationType}' is not a supported operation type`);
+                console.log(`'${change.operationType}' is not a supported operation type`);
         }
 
-        await producer.send(record);
+        if (record)
+            await producer.send(record);
 
         await producer.disconnect();
     } catch (error) {
-        console.log('Unable to proccess change:', error);
+        console.log('Unable to proccess change:', change, error);
     }
 };
 
